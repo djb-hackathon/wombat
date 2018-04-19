@@ -87,6 +87,7 @@ public class Detect {
 
                 // For full list of available annotations, see http://g.co/cloud/vision/docs
                 for (EntityAnnotation annotation : res.getLabelAnnotationsList()) {
+                    annotation.getAllFields().forEach((k, v) -> out.printf("%s : %s\n", k, v.toString()));
                 }
             }
         }
