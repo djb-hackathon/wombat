@@ -1,2 +1,0 @@
-# wombat
-Team Wombat hackathon!
