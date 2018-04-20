@@ -1,23 +1,35 @@
 package com.amfam.wombat.arpropertypricecalculator.ws;
 
+import android.content.Context;
+import android.test.AndroidTestCase;
+
+
 import com.google.cloud.vision.v1.AnnotateImageRequest;
 import com.google.cloud.vision.v1.AnnotateImageResponse;
 import com.google.cloud.vision.v1.EntityAnnotation;
 import com.google.cloud.vision.v1.Feature;
 import com.google.cloud.vision.v1.Image;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
 
 import junit.framework.Assert;
 
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DetectTest {
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
 
-    String fileName = "C:\\Users\\eam045\\Documents\\wombat\\ARPropertyPriceCalculator\\app\\src\\test\\img\\blender.jpg"; //"../../../../../../img/blender.jpg";
+
+public class DetectTest{
+
+    /**/String fileName = "C:\\Users\\jal113\\Desktop\\Hackathon\\wombat\\couch.jpg"; //"../../../../../../img/blender.jpg";
     @Before
     public void setUp() throws Exception {
     }
@@ -26,11 +38,21 @@ public class DetectTest {
     public void tearDown() throws Exception {
     }
 
-    @Test
-    public void detectLabels() {
-    }
+/*    @Test
+    public void getResponse() {
+        try {
+            byte[] byteArray = Detect.buildImage(fileName).toByteArray();
+            String response = new Detect().getResponse(InstrumentationRegistry.
+                    ,byteArray);
+            Assert.assertNotNull(response);
 
-    @Test
+        } catch(Exception e){
+
+        }
+    }*/
+
+
+   @Test
     public void buildImage() {
         try {
             Image img = Detect.buildImage(fileName);
@@ -42,7 +64,7 @@ public class DetectTest {
 
     }
 
-    @Test
+    /*@Test
     public void buildFeature() {
         Feature feature = Detect.buildFeature();
         Assert.assertNotNull(feature);
@@ -79,5 +101,5 @@ public class DetectTest {
         Assert.assertNotNull(result);
         Assert.assertEquals(4,result.size());
 
-    }
+    }*/
 }

@@ -1,5 +1,6 @@
 package com.amfam.wombat.arpropertypricecalculator;
 
+import android.content.Context;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import com.google.cloud.vision.v1.AnnotateImageRequest;
