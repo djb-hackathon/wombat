@@ -16,46 +16,178 @@ package com.amfam.wombat.arpropertypricecalculator.ws;
  * limitations under the License.
  */
 
+import android.util.Base64;
+
 import com.google.cloud.vision.v1.AnnotateImageRequest;
 import com.google.cloud.vision.v1.AnnotateImageResponse;
 import com.google.cloud.vision.v1.BatchAnnotateImagesResponse;
-import com.google.cloud.vision.v1.Block;
-import com.google.cloud.vision.v1.ColorInfo;
-import com.google.cloud.vision.v1.CropHint;
-import com.google.cloud.vision.v1.CropHintsAnnotation;
-import com.google.cloud.vision.v1.DominantColorsAnnotation;
 import com.google.cloud.vision.v1.EntityAnnotation;
-import com.google.cloud.vision.v1.FaceAnnotation;
 import com.google.cloud.vision.v1.Feature;
 import com.google.cloud.vision.v1.Feature.Type;
 import com.google.cloud.vision.v1.Image;
 import com.google.cloud.vision.v1.ImageAnnotatorClient;
-import com.google.cloud.vision.v1.ImageContext;
 import com.google.cloud.vision.v1.ImageSource;
-import com.google.cloud.vision.v1.LocationInfo;
-import com.google.cloud.vision.v1.Page;
-import com.google.cloud.vision.v1.Paragraph;
-import com.google.cloud.vision.v1.SafeSearchAnnotation;
-import com.google.cloud.vision.v1.Symbol;
-import com.google.cloud.vision.v1.TextAnnotation;
-import com.google.cloud.vision.v1.WebDetection;
-import com.google.cloud.vision.v1.WebDetection.WebEntity;
-import com.google.cloud.vision.v1.WebDetection.WebImage;
-import com.google.cloud.vision.v1.WebDetection.WebLabel;
-import com.google.cloud.vision.v1.WebDetection.WebPage;
-import com.google.cloud.vision.v1.WebDetectionParams;
-import com.google.cloud.vision.v1.Word;
-
 import com.google.protobuf.ByteString;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class Detect {
+
+
+
+    public static Image buildImage(String filePath) throws Exception {
+        ByteString imgBytes = ByteString.readFrom(new FileInputStream(filePath));
+
+        Image img = Image.newBuilder().setContent(imgBytes).build();
+
+        return img;
+    }
+
+    public static String buildRequestJSON(Image img) {
+        String requestJSON = "";
+        String base64data = Base64.encodeToString(img.toByteArray(), Base64.URL_SAFE);
+        String requestURL = "https://vision.googleapis.com/v1/images:annotate?key=AIzaSyDL2EgkAvpP1tVvqCdn1HaedgyPG-t621c";
+
+        try {
+            // Create an array containing
+            //  the LABEL_DETECTION feature
+            JSONArray features = new JSONArray();
+            JSONObject feature = new JSONObject();
+            feature.put("type", "LABEL_DETECTION");
+            features.put(feature);
+
+            // Create an object containing
+            // the Base64-encoded image data
+            JSONObject imageContent = new JSONObject();
+            imageContent.put("content", base64data);
+
+            // Put the array and object into a single request
+            // and then put the request into an array of requests
+            JSONArray requests = new JSONArray();
+            JSONObject request = new JSONObject();
+            request.put("image", imageContent);
+            request.put("features", features);
+            requests.put(request);
+            JSONObject postData = new JSONObject();
+            postData.put("requests", requests);
+
+            // Convert the JSON into a string
+            requestJSON = postData.toString();
+        } catch (Exception e) {
+            System.err.print(e.getMessage());
+        }
+        return requestJSON;
+    }
+
+    /***
+    public static String doStuff(String requestJSON) {
+
+        Fuel.post(requestURL)
+                .header(
+                        new Pair<String, Object>("content-length", requestJSON.length()),
+                        new Pair<String, Object>("content-type", "application/json")
+                )
+                .body(body.getBytes())
+                .responseString(new Handler<String>() {
+                    @Override
+                    public void success(@NotNull Request request,
+                                        @NotNull Response response,
+                                        String data) {
+                        // More code goes here
+                    }
+
+                    @Override
+                    public void failure(@NotNull Request request,
+                                        @NotNull Response response,
+                                        @NotNull FuelError fuelError) {}
+                });
+
+    }
+     **/
+
+    public  static Feature buildFeature() {
+        Feature feat = Feature.newBuilder().setType(Type.LABEL_DETECTION).build();
+        return feat;
+    }
+
+    public static AnnotateImageRequest buildRequest(Image img, Feature feat) {
+        AnnotateImageRequest request =
+                AnnotateImageRequest.newBuilder().addFeatures(feat).setImage(img).build();
+        return request;
+    }
+
+    public static AnnotateImageResponse getResponse(List<AnnotateImageRequest> requests) {
+        List<AnnotateImageResponse> responses = new ArrayList<AnnotateImageResponse>();
+        try (ImageAnnotatorClient client = ImageAnnotatorClient.create()) {
+
+            BatchAnnotateImagesResponse response = client.batchAnnotateImages(requests);
+            responses = response.getResponsesList();
+
+            if (responses.get(0).hasError()) {
+                //System.out.printf("Error: %s\n", res.getError().getMessage());
+                return null;
+            }
+        } catch (Exception e){
+
+        }
+        return responses.get(0);
+    }
+
+
+    //res.getLabelAnnotationsList() = annotations
+    public static List<EntityAnnotation> getTopThree(List<EntityAnnotation> annotations) {
+        List<EntityAnnotation> choices = new ArrayList<>();
+
+        int i = 0;
+        int max = 3;
+        while (i < annotations.size() && i < max){
+            choices.add(annotations.get(i));
+            i++;
+        }
+
+        EntityAnnotation other = EntityAnnotation.newBuilder().setDescription("Other").build();
+        choices.add(other);
+        return choices;
+    }
+
+    public static void printResponses(List<AnnotateImageResponse> responses, PrintStream out) {
+        for (AnnotateImageResponse res : responses) {
+            if (res.hasError()) {
+                out.printf("Error: %s\n", res.getError().getMessage());
+                return;
+            }
+
+            // For full list of available annotations, see http://g.co/cloud/vision/docs
+            for (EntityAnnotation annotation : res.getLabelAnnotationsList()) {
+                annotation.getAllFields().forEach((k, v) ->
+                        System.out.printf("%s : %s\n", k, v.toString()));
+            }
+        }
+    }
+
+    public static List<EntityAnnotation> getTopAnnotations(String filePath) {
+        List<EntityAnnotation> topAnnotations = new ArrayList<EntityAnnotation>();
+        try{
+            Image img = buildImage(filePath);
+            Feature feat = buildFeature();
+            AnnotateImageRequest request = buildRequest(img, feat);
+            List<AnnotateImageRequest> requests = new ArrayList<AnnotateImageRequest>();
+            requests.add(request);
+            AnnotateImageResponse response = getResponse(requests);
+            topAnnotations = getTopThree(response.getLabelAnnotationsList());
+
+        } catch(Exception e) {
+            System.err.print(e.getMessage());
+        }
+        return topAnnotations;
+    }
     /**
      * Detects labels in the specified local image.
      *
@@ -63,7 +195,7 @@ public class Detect {
      * @param out A {@link PrintStream} to write detected labels to.
      * @throws Exception on errors while closing the client.
      * @throws IOException on Input/Output errors.
-     */
+     *
     public static void detectLabels(String filePath, PrintStream out) throws Exception, IOException {
         List<AnnotateImageRequest> requests = new ArrayList<>();
 
@@ -80,6 +212,7 @@ public class Detect {
             List<AnnotateImageResponse> responses = response.getResponsesList();
 
             for (AnnotateImageResponse res : responses) {
+
                 if (res.hasError()) {
                     out.printf("Error: %s\n", res.getError().getMessage());
                     return;
@@ -87,10 +220,12 @@ public class Detect {
 
                 // For full list of available annotations, see http://g.co/cloud/vision/docs
                 for (EntityAnnotation annotation : res.getLabelAnnotationsList()) {
+                    annotation.getAllFields().forEach((k, v) ->
+                            System.out.printf("%s : %s\n", k, v.toString()));
                 }
             }
         }
-    }
+    }*/
 
     /**
      * Detects labels in the specified remote image on Google Cloud Storage.
