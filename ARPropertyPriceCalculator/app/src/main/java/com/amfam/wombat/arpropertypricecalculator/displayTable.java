@@ -3,13 +3,11 @@ package com.amfam.wombat.arpropertypricecalculator;
 import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.widget.ImageView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.view.ViewGroup.LayoutParams;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 
 public class displayTable extends AppCompatActivity {

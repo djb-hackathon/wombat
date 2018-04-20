@@ -1,9 +1,9 @@
 package com.amfam.wombat.arpropertypricecalculator;
 
-import java.io.File;
+import java.math.BigDecimal;
 
 public class ARProperty {
     String fileLocation;
-    Double cost;
+    BigDecimal cost;
     String propertyDescription;
 }
